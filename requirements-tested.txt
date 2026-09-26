@@ -1,0 +1,13 @@
+# Direct dependency versions tested on macOS ARM64, Python 3.11.11.
+openai==2.54.0
+streamlit==1.64.0
+pydantic==2.13.5
+httpx==0.28.1
+beautifulsoup4==4.15.0
+defusedxml==0.7.1
+pypdf==6.19.0
+reportlab==4.5.1
+python-dotenv==1.2.3
+filelock==3.17.0
+pytest==9.1.1
+PyMuPDF==1.28.2

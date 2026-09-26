@@ -1,0 +1,21 @@
+.venv/
+.env
+!.env.example
+__pycache__/
+.pytest_cache/
+*.egg-info/
+data/
+tmp/
+.DS_Store
+
+# Local secrets, exports, and editor state
+.env.*
+!.env.example
+output/
+*.log
+.coverage
+htmlcov/
+build/
+dist/
+.vscode/
+.idea/

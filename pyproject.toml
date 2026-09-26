@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paper-trail-agent"
+version = "0.1.0"
+description = "A local, evidence-grounded research paper agent"
+requires-python = ">=3.11"
+dependencies = [
+  "openai>=2,<3", "streamlit>=1.50,<2", "pydantic>=2.10,<3",
+  "httpx>=0.28,<1", "beautifulsoup4>=4.13,<5", "defusedxml>=0.7,<1",
+  "pypdf>=5,<7", "reportlab>=4.4,<5", "python-dotenv>=1,<2", "filelock>=3.16,<4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "PyMuPDF>=1.25,<2"]
+
+[project.scripts]
+paper-agent = "paper_agent.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["paper_agent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["live: external academic network integration", "model: paid real model evaluation"]
