@@ -31,6 +31,6 @@ def default_limits() -> Limits:
     for key, env in mapping.items():
         value = os.getenv(env, "").strip()
         if value:
-            values[key] = (None if key in {"model_calls", "finalization_calls"}
+            values[key] = (None if key in {"model_calls", "finalization_calls", "tokens"}
                            and value.lower() == "auto" else int(value))
     return Limits(**values)

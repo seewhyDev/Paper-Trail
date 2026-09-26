@@ -33,7 +33,7 @@ class Limits(StrictModel):
     stalled_turns: int = Field(default=6, ge=3, le=20)
     tool_calls: int = Field(default=80, ge=1, le=160)
     seconds: int = Field(default=480, ge=5, le=1800)
-    tokens: int = Field(default=500000, ge=500, le=1000000)
+    tokens: int | None = Field(default=None, ge=500)
     output_tokens: int = Field(default=6500, ge=256, le=16000)
     network_timeout: int = Field(default=20, ge=1, le=60)
     retries: int = Field(default=1, ge=0, le=2)

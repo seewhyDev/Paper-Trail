@@ -33,7 +33,8 @@ def state_view(s: RunState):
                                              if s.limits.finalization_calls is not None else "until_complete"),
                       "tools": s.limits.tool_calls - s.usage.tool_calls,
                       "seconds": round(max(0, s.limits.seconds - s.usage.active_seconds), 1),
-                      "tokens": max(0, s.limits.tokens - s.usage.charged_tokens),
+                      "tokens": (max(0, s.limits.tokens - s.usage.charged_tokens)
+                                 if s.limits.tokens is not None else "until_complete"),
                       "distinct_fulltext_attempts": s.limits.fulltexts - len(s.usage.fulltext_attempts),
                       "candidate_slots": s.limits.candidates - (sum(p.verdict != "exclude" for p in s.papers.values())
                                                                   if s.require_target else len(s.papers))},
@@ -62,6 +63,25 @@ def state_view(s: RunState):
                                         "instruction": "이 논문의 추가 원문 검토·근거 정리·상세 작성을 먼저 완료하세요."}
         view["evidence"] = [e.model_dump() for e in s.evidence.values() if e.paper_id == focus.id]
     return view
+
+
+def prepare_model_request(s):
+    """Shared admission calculation for execution and read-only resume checks.
+
+    The byte estimate is an accounting reservation, not a model context limit.
+    Auto mode retains usage accounting without capping cumulative spending.
+    """
+    snapshot = {"role": "user", "content": STATE_PREFIX + json.dumps(state_view(s), ensure_ascii=False)}
+    finalizing = s.require_target and ready_to_finalize(s)
+    conversation = model_input(s, snapshot, recent_turns=(1 if finalizing else 2) if s.require_target else None)
+    tool_defs = definitions(s)
+    upper_input = (len(json.dumps(conversation, ensure_ascii=False).encode())
+                   + len(json.dumps(tool_defs, ensure_ascii=False).encode())
+                   + len(SYSTEM.encode()) + 4096)
+    available_output = s.limits.output_tokens
+    if s.limits.tokens is not None:
+        available_output = min(available_output, s.limits.tokens - s.usage.charged_tokens - upper_input)
+    return snapshot, conversation, tool_defs, upper_input, available_output
 
 
 class Agent:
@@ -99,7 +119,7 @@ class Agent:
             return "새로운 자료·근거·브리핑 작성 없이 같은 작업이 반복되어 중단했습니다. 확보한 자료는 저장했습니다."
         if s.usage.tool_calls >= s.limits.tool_calls:
             return "도구 호출 상한 도달"
-        if s.usage.charged_tokens >= s.limits.tokens:
+        if s.limits.tokens is not None and s.usage.charged_tokens >= s.limits.tokens:
             return "토큰 예산 상한 도달"
         return None
 
@@ -120,14 +140,10 @@ class Agent:
                 self.halt(reason, "cancelled" if self.stop_requested() else "incomplete")
                 break
             self.save()
-            snapshot = {"role": "user", "content": STATE_PREFIX + json.dumps(state_view(s), ensure_ascii=False)}
+            snapshot, conversation, tool_defs, upper_input, available_output = prepare_model_request(s)
             finalizing = s.require_target and ready_to_finalize(s)
-            conversation = model_input(s, snapshot, recent_turns=(1 if finalizing else 2) if s.require_target else None)
-            tool_defs = definitions(s)
             # Conservative admission budget: UTF-8 bytes upper-bound ordinary text tokens,
             # plus protocol overhead. Actual usage replaces this reservation if supplied.
-            upper_input = len(json.dumps(conversation, ensure_ascii=False).encode()) + len(json.dumps(tool_defs, ensure_ascii=False).encode()) + len(SYSTEM.encode()) + 4096
-            available_output = min(s.limits.output_tokens, s.limits.tokens - s.usage.charged_tokens - upper_input)
             if available_output < 256:
                 self.halt("다음 요청의 입력 및 출력 예약량이 남은 토큰 예산을 초과합니다.")
                 break
@@ -170,7 +186,7 @@ class Agent:
                     reason = "cancel_requested"
                 elif self.previous + time.monotonic() - self.started >= s.limits.seconds:
                     reason = "time_budget"
-                elif s.usage.charged_tokens >= s.limits.tokens:
+                elif s.limits.tokens is not None and s.usage.charged_tokens >= s.limits.tokens:
                     reason = "token_budget"
                 elif s.usage.tool_calls >= s.limits.tool_calls:
                     reason = "tool_budget"

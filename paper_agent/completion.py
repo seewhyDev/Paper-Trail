@@ -70,18 +70,37 @@ def resume_problem(state, *, refresh_call_policy=False):
     from .config import default_limits
     policy = default_limits() if refresh_call_policy else state.limits
     finalizing = ready_to_finalize(state)
-    if (state.usage.charged_tokens >= state.limits.tokens
+    if ((policy.tokens is not None and state.usage.charged_tokens >= policy.tokens)
             or (policy.model_calls is not None and state.usage.model_calls >= policy.model_calls and not finalizing)
             or (finalizing and policy.finalization_calls is not None
                 and state.usage.finalization_calls >= policy.finalization_calls)
             or state.usage.tool_calls >= state.limits.tool_calls
             or state.usage.active_seconds >= state.limits.seconds):
         return "설정된 실행 한도를 모두 사용해 바로 이어갈 수 없습니다. 확보한 자료는 저장되어 있습니다."
+    if policy.tokens is not None:
+        from .agent import prepare_model_request
+        from .worker import close_interrupted_calls
+        candidate = state.model_copy(deep=True)
+        if refresh_call_policy:
+            apply_resume_policy(candidate, policy)
+        candidate.require_target = True
+        candidate.stalled_turns = 0
+        close_interrupted_calls(candidate)
+        if prepare_model_request(candidate)[-1] < 256:
+            return "남은 토큰 예산으로 다음 요청을 보낼 수 없습니다. MAX_TOKENS를 auto 또는 더 큰 값으로 설정하고 서버를 재시작하세요."
     return None
 
 
+def apply_resume_policy(state, policy):
+    """Apply renewable execution policy while preserving observations and usage."""
+    state.limits.model_calls = policy.model_calls
+    state.limits.finalization_calls = policy.finalization_calls
+    state.limits.stalled_turns = policy.stalled_turns
+    state.limits.tokens = policy.tokens
+
+
 def prepare_resume(state, *, refresh_call_policy=False):
-    """Reuse durable work; optionally adopt current call policy, never reset spending."""
+    """Reuse work; optionally adopt current call/token policy, never reset spending."""
     problem = resume_problem(state, refresh_call_policy=refresh_call_policy)
     if problem:
         raise ValueError(problem)
@@ -90,9 +109,7 @@ def prepare_resume(state, *, refresh_call_policy=False):
     if refresh_call_policy:
         from .config import default_limits
         policy = default_limits()
-        state.limits.model_calls = policy.model_calls
-        state.limits.finalization_calls = policy.finalization_calls
-        state.limits.stalled_turns = policy.stalled_turns
+        apply_resume_policy(state, policy)
     state.stalled_turns = 0  # explicit user resume permits another recovery attempt
     state.require_target = True
     state.status, state.stop_reason, state.pdf_error = "ready", "", ""

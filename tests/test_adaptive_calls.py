@@ -114,6 +114,9 @@ def test_auto_resume_preserves_other_exhausted_limits(state, monkeypatch, limit)
     monkeypatch.setenv("MAX_MODEL_CALLS", "auto")
     monkeypatch.setenv("MAX_FINALIZATION_CALLS", "auto")
     state.status = "incomplete"
+    if limit == "tokens":
+        state.limits.tokens = 500000
+        monkeypatch.setenv("MAX_TOKENS", "500000")
     usage_field = {"tokens": "charged_tokens", "seconds": "active_seconds", "tool_calls": "tool_calls"}[limit]
     setattr(state.usage, usage_field, getattr(state.limits, limit))
     before = state.model_copy(deep=True)
@@ -139,6 +142,8 @@ def test_ui_only_offers_resumable_work(state, store, monkeypatch, exhausted):
     state.status, state.mode = "incomplete", "live"
     state.limits.target = 4
     state.limits.model_calls = state.usage.model_calls = 24
+    state.limits.tokens = 500000
+    monkeypatch.setenv("MAX_TOKENS", "500000")
     if exhausted:
         state.usage.charged_tokens = state.limits.tokens
     store.save(state)
