@@ -2,6 +2,10 @@
 
 **연구 질문에서 논문 탐색, 후보 비교, 원문 검토, 한국어 PDF 브리핑까지 이어 주는 로컬 AI 에이전트입니다.**
 
+[![Paper Trail 데모 영상 — 연구 질문 입력 화면](assets/demo/papertrail-demo-preview.png)](https://github.com/seewhyDev/Paper-Trail/raw/refs/heads/main/assets/demo/papertrail-demo.mp4)
+
+**[▶ 데모 영상 보기·다운로드 (MP4)](https://github.com/seewhyDev/Paper-Trail/raw/refs/heads/main/assets/demo/papertrail-demo.mp4)** — 위 미리보기를 눌러 전체 영상을 열 수 있습니다. 브라우저에 따라 다운로드될 수 있습니다.
+
 예를 들어 “적은 라벨로 문서 분류를 학습하는 방법을 알고 싶어”라고 입력하면, 공개 학술 자료를 검색하고 후보를 비교한 뒤 **원하는 수의 추천 논문(1~5편, 기본 3편)**을 정리합니다. 각 논문이 다루는 문제, 핵심 방법, 주요 결과, 한계를 웹 화면과 PDF로 확인할 수 있습니다.
 
 Python과 Streamlit으로 실행합니다. **API 키 없이 체험하는 합성 데모**와 **OpenAI API를 사용하는 실제 논문 탐색**을 제공합니다. 별도 데이터베이스, Docker, Codex는 필요하지 않습니다.

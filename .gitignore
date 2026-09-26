@@ -19,3 +19,6 @@ build/
 dist/
 .vscode/
 .idea/
+
+# Original demo recording; web copy is published under assets/demo/
+/PaperTrail-Demo.mov
