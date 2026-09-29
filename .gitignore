@@ -22,3 +22,7 @@ dist/
 
 # Original demo recording; web copy is published under assets/demo/
 /PaperTrail-Demo.mov
+
+# Local presentation and architecture notes
+/docs/CODE_WALKTHROUGH.md
+/docs/ARCHITECTURE.md

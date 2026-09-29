@@ -137,10 +137,6 @@ flowchart TD
 | [worker.py](paper_agent/worker.py) | 별도 작업 프로세스, 동시 실행 제한·중지 |
 | [app.py](app.py) / [pdf.py](paper_agent/pdf.py) | 사용자 화면 / PDF 생성 |
 
-자세한 도구 목록과 책임 구분은 [아키텍처 문서](docs/ARCHITECTURE.md)에 있습니다.
-
-발표를 준비한다면 [코드 구조와 에이전트 동작 설명](docs/CODE_WALKTHROUGH.md)을 참고하세요. 핵심 파일·라이브러리·API부터 실제 실행 흐름, 근거 검증, 발표용 코드 열람 순서와 예상 질문까지 정리했습니다.
-
 ## 실행을 다시 시작하거나 중지하기
 
 다음부터는 프로젝트 폴더에서 가상환경을 활성화하고 서버만 실행하면 됩니다.
